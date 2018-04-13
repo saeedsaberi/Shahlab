@@ -1,0 +1,1155 @@
+__PIPELINE_INFO__: 
+    name: 'scRNA'
+    version: '1.0.0'
+    author: 'ssaberi@bccrc.ca'
+    data_type: 
+    input_type: 'expression matrix'
+    host_cluster: 
+    date_created: '2017-5-20'
+    date_last_updated: ''
+    factory_version: '2.3.0'
+__GENERAL__: 
+    ld_library_path: ['/genesis/extscratch/shahlab/ssaberi/centos6/miniconda2/lib','/gsc/software/linux-x86_64-centos6/gcc-5.2.0/lib64']
+    python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+    R: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/R
+    Rscript: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/Rscript
+__SHARED__:
+    genome: 'GRCh38'
+    ld_library_path: ['/genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib','/gsc/software/linux-x86_64-centos6/gcc-5.2.0/lib64']
+    python_path: '/shahlab/ssaberi/scRNA-pipeline/:/genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/python3.6/site-packages/'
+    cellranger: /extscratch/shahlab/ssaberi/bin/cellranger-2.0.0/cellranger
+__SAMPLES__: 
+
+# #================================================
+# # run bam coverage
+# #================================================
+__TASK_get_BigWiG:
+    reserved:
+        # do not change this section.
+        component_name: 'run_bamcoverage'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            bamCoverage: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/bamCoverage
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+        boilerplate:
+    component:
+        input_files:
+            input: ('__SAMPLES__', 'bam')
+        output_files:
+            output: 'SC_Bigwigs/${sample_id}.bw'
+        parameters:
+            outputfileformat: 'bigwig'
+            effectivegenomesize: '3114492550'
+#================================================
+# run bam coverage
+#================================================
+__TASK_computeMatrix:
+    reserved:
+        # do not change this section.
+        component_name: 'run_computeMatrix'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            computeMatrix: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/computeMatrix
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+    component:
+        input_files:
+            bigwig: ('__TASK_get_BigWiG', 'output')
+            hg_table: /genesis/extscratch/shahlab/ssaberi/hgTables.txt 
+        output_files:
+            output: 'SC_BamMatrix/${sample_id}_scaled.gz'
+            outFileNameMatrix: 'SC_BamMatrix/${sample_id}_matrix2_multiple.tab'
+            outFileSortedRegions: 'SC_BamMatrix/${sample_id}_sregions2_multipleBW_l2r_twoGroups_genes.bed'
+        parameters:
+            start: 3000
+            end: 3000
+            skipZeros: True
+            scale_regions: True
+#================================================
+# run bam coverage
+#================================================
+__TASK_computeMatrix_noScale:
+    reserved:
+        # do not change this section.
+        component_name: 'run_computeMatrix'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            computeMatrix: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/computeMatrix
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+    component:
+        input_files:
+            bigwig: ('__TASK_get_BigWiG', 'output')
+            hg_table: /genesis/extscratch/shahlab/ssaberi/hgTables.txt 
+        output_files:
+            output: 'SC_BamMatrix/${sample_id}_not_scaled_scaled.gz'
+            outFileNameMatrix: 'SC_BamMatrix/${sample_id}_matrix2_noscaled_multiple.tab'
+            outFileSortedRegions: 'SC_BamMatrix/${sample_id}_sregions2_noscaled_multipleBW_l2r_twoGroups_genes.bed'
+        parameters:
+            start: 3000
+            end: 3000
+            skipZeros: True
+            scale_regions: False
+            referencePoint: 'TES'
+#================================================
+# plot coverage not scaled
+#================================================
+__TASK_plotHeatmap_noScale:
+    reserved:
+        # do not change this section.
+        component_name: 'run_plotHeatmap'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            plotHeatmap: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/plotHeatmap
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+    component:
+        input_files:
+            input: ('__TASK_computeMatrix_noScale', 'output')
+        output_files:
+            output: 'SC_BamMatrix/${sample_id}_noscaled.png'
+        parameters:
+            referencePoint: 'TES'
+#================================================
+# plot coverage not scaled
+#================================================
+__TASK_plotHeatmap:
+    reserved:
+        # do not change this section.
+        component_name: 'run_plotHeatmap'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            plotHeatmap: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/plotHeatmap
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+    component:
+        input_files:
+            input: ('__TASK_computeMatrix', 'output')
+        output_files:
+            output: 'SC_BamMatrix/${sample_id}_scaled.png'
+        parameters:
+
+#================================================
+# plot coverage plotProfile not scaled
+#================================================
+__TASK_plotProfile_noScale:
+    reserved:
+        # do not change this section.
+        component_name: 'run_plotProfile'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            plotProfile: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/plotProfile
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+    component:
+        input_files:
+            input: ('__TASK_computeMatrix_noScale', 'output')
+        output_files:
+            output: 'SC_BamMatrix/${sample_id}_plotProfile_noscaled.png'
+        parameters:
+#================================================
+# plot coverage not scaled
+#================================================
+__TASK_plotProfile:
+    reserved:
+        # do not change this section.
+        component_name: 'run_plotProfile'
+        component_version: '1.0.0'
+        seed_version: '1.0.0'
+    run:
+        # NOTE: component cannot run in parallel mode.
+        use_cluster: True
+        memory: '4G'
+        add_breakpoint: False
+        requirements:
+            plotProfile: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/plotProfile
+        env_vars:
+            PATH:  ('__SHARED__', 'deeptools_path') 
+            LD_LIBRARY_PATH: ('__SHARED__', 'ld_library_path')
+    component:
+        input_files:
+            input: ('__TASK_computeMatrix', 'output')
+        output_files:
+            output: 'SC_BamMatrix/${sample_id}_plotProfile_scaled.png'
+        parameters:
+#================================================
+# run cellranger mat2csv
+#================================================
+__TASK_run_cellranger_mat2csv: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_cellranger_mat2csv'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '10G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3:/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library
+    component: 
+        parameters:
+            cellranger: ('__SHARED__','cellranger') 
+            verbose_interval: 50
+            memory: '10G'
+            sample_id: ('__SAMPLES__','case')
+        input_files:
+            #fastqs: ('__TASK_3__','output_dir')
+            h5_dir: ('__SAMPLES__','h5_dir')
+        output_files:
+            csv: ${sample_id}/expression.csv
+#================================================
+# run cellranger csv2mat
+#================================================
+__TASK_run_csv2mat: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_csv2mat'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '10G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+            Rscript: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/Rscript
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3:/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library
+    component: 
+        parameters:
+            cellranger: ('__SHARED__','cellranger') 
+            verbose_interval: 50
+            memory: '10G'
+            sample_id: ('__SAMPLES__','case')
+            top_genes: 2000
+            top_PCs: 100
+        input_files:
+            #fastqs: ('__TASK_3__','output_dir')
+            csv: ('__TASK_run_cellranger_mat2csv','csv')
+        output_files:
+            tsv: ${sample_id}/expression.tsv
+
+#================================================
+# run cellranger
+#================================================
+# __TASK_run_cellranger: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_cellranger'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         env_vars:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3:/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library
+#     component: 
+#         parameters:
+#             cellranger: ('__SHARED__','cellranger') 
+#             jobmode: local
+#             normalize: False
+#             verbose_interval: 50
+#             sample_id: $sample_id
+#             memory: '100G'
+#             num_cpus: 8
+#             maxjobs: 8
+#             cells: 10000
+#             transcriptome: '/genesis/shahlab/jding/common_data/CellRanger/refdata-cellranger-1.1.0/hg19'
+#             case: $sample_id
+#             id: $sample_id
+#             indices: SI-3A-G2
+#         input_files:
+#             #fastqs: ('__TASK_3__','output_dir')
+#             fastqs: ('__SAMPLES__','fastqs')
+#         output_files:
+#             out_dir: $sample_id
+#================================================
+# summarize cellranger
+# #================================================
+# __TASK_summarize__cellranger: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'summarize_cellranger'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3:/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library
+#     component: 
+#         parameters:
+#             genome: 'hg19'
+#         input_files:
+#             name: $sample_id
+#             case_dir: $sample_id
+#         output_files:
+#             out_file: 'summarized_cellranger.txt'
+#             out_file_T: 'summarized_cellranger.T.txt'
+#             out_dir: 'summarize_cellranger/'
+
+#================================================
+# run QC
+#================================================
+__TASK_h5_QC: 
+    reserved: 
+        # do not change this section.
+        component_name: 'h5_QC'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '100G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+    component: 
+        parameters:
+            sample_id: ('__SAMPLES__','case')
+            genome: ('__SHARED__','genome')
+        input_files:
+            #in_dir: ('__TASK_summarize__cellranger','out_dir')
+            h5_file: ('__SAMPLES__','h5_file')
+        output_files:
+            out_dir: 'QC/'
+#================================================
+# run clustering analysis phenograph
+#================================================
+__TASK_analyse_matrix_QC_phenograph: 
+    reserved: 
+        # do not change this section.
+        component_name: 'analyse_matrix_phenograph'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '400G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+    component: 
+        parameters:
+            sample_id: $sample_id
+            dimension_limit: 50
+            njobs: 1
+            alpha: 0.01
+            nearest_neighbors: 30
+            genome: ('__SHARED__','genome')
+            top_genes: 2000
+        input_files:
+            #in_dir: ('__TASK_summarize__cellranger','out_dir')
+            #in_dir: ('__SAMPLES__','h5_dir')
+            h5_file: ('__SAMPLES__','h5_file')
+            Marker_genes: ('__SHARED__','Marker_genes')
+        output_files:
+            #data_label_file: ('__SAMPLES__','data_label_file')
+            data_label_file: analyse_matrix_phenograph/${sample_id}-labels.txt
+            out_dir: 'analyse_matrix_phenograph/'
+            signature_genes: 'null'
+            PCs: ${sample_id}/PCs.tsv
+            outfile_minibatch: ${sample_id}/outfile_minibatch_PC-labels.tsv
+#================================================
+# run clustering analysis phenograph with log_transform
+#================================================
+__TASK_analyse_matrix_QC_phenograph_log: 
+    reserved: 
+        # do not change this section.
+        component_name: 'analyse_matrix_phenograph'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '100G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+    component: 
+        parameters:
+            sample_id: $sample_id
+            dimension_limit: 10
+            njobs: 1
+            alpha: 0.01
+            nearest_neighbors: 100
+            genome: ('__SHARED__','genome')
+            top_genes: 2000
+            log_transform: True
+        input_files:
+            #in_dir: ('__TASK_summarize__cellranger','out_dir')
+            #in_dir: ('__SAMPLES__','h5_dir')
+            h5_file: ('__SAMPLES__','h5_file')
+            Marker_genes: ('__SHARED__','Marker_genes')
+        output_files:
+            #data_label_file: ('__SAMPLES__','data_label_file')
+            data_label_file: analyse_matrix_phenograph-log-10/${sample_id}-labels-log-10.txt
+            out_dir: 'analyse_matrix_phenograph-log-10/'
+            signature_genes: 'null'
+            PCs: ${sample_id}/PCs-log-10.tsv
+            tsne_file: ${sample_id}/tsne-log-10.tsv
+            outfile_minibatch: ${sample_id}/outfile_minibatch_PC-labels-log-10.tsv
+#================================================
+# draw markers PCA space
+#================================================
+__TASK_draw_markers_PCA: 
+    reserved: 
+        # do not change this section.
+        component_name: 'draw_markers'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '4G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+    component: 
+        parameters:
+            sample_id: $sample_id
+            genome: ('__SHARED__','genome')
+        input_files:
+            h5_file: ('__SAMPLES__','h5_file')
+            Marker_genes: ('__SHARED__','Marker_genes')
+            PCs: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+
+        output_files:
+            out_dir: 'draw_markers/'
+            fig_type: 'PCA'
+#================================================
+# kmeans on PCA space
+#================================================
+__TASK_kmeans_PCA: 
+    reserved: 
+        # do not change this section.
+        component_name: 'draw_kmeans'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '4G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+        requirements:
+            Rscript: 
+    component: 
+        parameters:
+            sample_id: $sample_id
+            clus_lim: 5
+            dimension_limit: 10
+        input_files:
+            PCs: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+        output_files:
+            pref: 'kmeans/kmeans'
+#================================================
+# draw markers tSNE space
+#================================================
+__TASK_draw_markers_tSNE: 
+    reserved: 
+        # do not change this section.
+        component_name: 'draw_markers'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '100G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+    component: 
+        parameters:
+            sample_id: $sample_id
+            genome: ('__SHARED__','genome')
+        input_files:
+            h5_file: ('__SAMPLES__','h5_file')
+            Marker_genes: ('__SHARED__','Marker_genes')
+            PCs: ('__TASK_analyse_matrix_QC_phenograph_log','tsne_file')
+        output_files:
+            out_dir: 'draw_markers/'
+            fig_type: 'tSNE'
+#================================================
+#DE using Seurat
+#================================================
+__TASK_analyse_Seurat_DE: 
+    reserved: 
+        # do not change this section.
+        component_name: 'analyse_Seurat_DE'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '100G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+             Rscript: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/Rscript
+        env_vars:
+            # PYTHONPATH: ('__SHARED__','python_path')
+            # LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library
+    component: 
+        parameters:
+            sample_id: $sample_id
+            dimension_limit: 25
+            genome: ('__SHARED__','genome')
+        input_files:
+            h5_dir: ('__SAMPLES__','h5_dir')
+            labels: ('__TASK_analyse_matrix_QC_phenograph_log','data_label_file')
+        output_files:
+            pref: analyse_Seurat_DE/$sample_id
+            out_dir: 'analyse_Seurat_DE/'
+
+#================================================
+#run clustering analysis Seurat
+#================================================
+__TASK_analyse_matrix_Seurat: 
+    reserved: 
+        # do not change this section.
+        component_name: 'analyse_matrix_Seurat'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '200G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+             Rscript: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/Rscript
+        env_vars:
+            # PYTHONPATH: ('__SHARED__','python_path')
+            # LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library
+    component: 
+        parameters:
+            sample_id: $sample_id
+            dimension_limit: 25
+            genome: ('__SHARED__','genome')
+            top_genes: 2000
+            top_genes_heatmap: 20
+            resolution: .6
+        input_files:
+            h5_dir: ('__SAMPLES__','h5_dir')
+            Marker_genes: ('__SHARED__','Marker_genes')
+        output_files:
+            pref: analyse_matrix_Seurat/${sample_id}
+            out_dir: 'analyse_matrix_Seurat/'
+            PCs: analyse_matrix_Seurat/${sample_id}-PCs.txt
+            Seurat_labels: analyse_matrix_Seurat/${sample_id}-labels.txt
+            markers_DE: analyse_matrix_Seurat/${sample_id}-Markers_DE.txt
+#================================================
+#   {Pathway analysis}
+#================================================
+__TASK_analyse_pathway: 
+    reserved: 
+        # do not change this section.
+        component_name: 'analyse_pathways'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '100G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+            Rscript: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/Rscript
+        env_vars:
+            R_LIBS: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library
+    component: 
+        parameters:
+            sample_id: $sample_id
+            pvalueCutoff: 0.05
+            qvalueCutoff : 0.1
+            avg_logFC: .5
+            p_val_adj: 0.05
+            pwa_padj: 'BH'
+        input_files:
+            input: ('__TASK_analyse_matrix_Seurat','markers_DE')
+        output_files:
+            out_dir: analyse_Seurat_ReactomePA
+            pref: analyse_Seurat_ReactomePA/$sample_id
+            output: analyse_Seurat_ReactomePA/${sample_id}.EnrichedPathways.tsv
+# #================================================
+# #   {compare populations mutations}
+# #================================================
+__TASK_run_varscan: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_Varscan'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '10G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+            java: /shahlab/pipelines/apps_centos6/jdk1.8.0_51/bin/java
+            VarScan: /genesis/extscratch/shahlab/ssaberi/centos6/anaconda2/bin/varscan
+            samtools: /shahlab/pipelines/apps_centos6/samtools-1.3.1/samtools
+            strelka: /shahlab/pipelines/apps_centos6/strelka_workflow-1.0.14/bin/configureStrelkaWorkflow.pl
+        env_vars:
+            R_LIBS: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library
+            LD_LIBRARY_PATH: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib
+    component: 
+        parameters:
+            sample_id: $sample_id
+        input_files:
+            reference: /shahlab/archive/ssaberi_temp/refdata-cellranger-GRCh38-1.2.0/fasta/genome.fa
+            cluster_labels: ('__TASK_analyse_matrix_Seurat','Seurat_labels')
+            bam: ('__SAMPLES__','bam')
+        output_files:
+            output_dir: analyse_mutations_Varscan/
+# # # #================================================
+# # # # run scvis train
+# # # #================================================
+__TASK_scvis__train_PCA: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_scvis_train'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '10G'
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+    component: 
+        parameters:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+            #normalize: False
+            verbose_interval: 50
+            sample_id: ${sample_id}
+            genome: ('__SHARED__','genome')
+        input_files:
+            # indir: $sample_id
+            data_matrix_file: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+            pretrained_model_file: False
+            indir_label: ('__TASK_analyse_matrix_QC_phenograph_log','out_dir')
+            data_label_file: ('__TASK_analyse_matrix_QC_phenograph_log','data_label_file')
+        output_files:
+            out_dir_train: 'run_scvis_train_PCA/'
+            sample_dir: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_train_PCA/'
+
+# #================================================
+# # run scvis map
+# #================================================
+__TASK_scvis__map_PCA: 
+    reserved: 
+        # do not change this section.
+        component_name: 'run_scvis_map'
+        component_version: '0.0.1'
+        seed_version: '0.0.1'
+    run:
+        use_cluster: True
+        memory: '10G'
+        #num_cpus: 1
+        forced_dependencies: []
+        add_breakpoint: False
+        boilerplate:
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+        env_vars:
+            PYTHONPATH: ('__SHARED__','python_path')
+            LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+            R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+    component:
+        parameters: 
+            #normalize: False
+            sample_id: $sample_id
+            genome: ('__SHARED__','genome')
+        requirements:
+            python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+        input_files:
+            # indir: ('__TASK_summarize__cellranger','out_dir')
+            # infile: ('__TASK_summarize__cellranger','out_file')
+            data_matrix_file: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+            pretrained_model_file: False
+            #indir_label: ('__TASK_analyse_matrix_QC_phenograph','out_dir')
+            data_label_file: ('__TASK_analyse_matrix_QC_phenograph_log','data_label_file')
+            ckpt_dir: ('__TASK_scvis__train_PCA','sample_dir')
+            #data_matrix_file: ('__SAMPLES__','expresion')
+            #data_label_file: ('__SAMPLES__','labels')
+        output_files:
+            out_dir: 'run_scvis_map_PCA/'
+
+# #================================================
+# # draw markers PCA space
+# #================================================
+# __TASK_draw_markers_scvis_PCA: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'draw_markers'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '4G'
+#         forced_dependencies: ['__TASK_scvis__map_PCA']
+#         add_breakpoint: False
+#         boilerplate:
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#     component: 
+#         parameters:
+#             usecols: '1 2'
+#             sample_id: $sample_id
+#             genome: ('__SHARED__','genome')
+#         input_files:
+#             h5_file: ('__SAMPLES__','h5_file')
+#             Marker_genes: ('__SHARED__','Marker_genes')
+#             PCs: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_map_PCA/*map.tsv'
+#         output_files:
+#             out_dir: 'run_scvis_map_PCA/'
+#             fig_type: 'Scvis'
+# # #================================================
+# # # run scvis train sparse
+# # #================================================
+# __TASK_scvis__train_sparse: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_scvis_train'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component: 
+#         parameters:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#             #normalize: False
+#             verbose_interval: 50
+#             sample_id: ${sample_id}
+#             genome: ('__SHARED__','genome')
+#         input_files:
+#             # indir: $sample_id
+#             data_matrix_file: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+#             pretrained_model_file: False
+#             #indir_label: ('__TASK_analyse_matrix_QC_phenograph','out_dir')
+#             data_label_file: ('__TASK_analyse_matrix_QC_phenograph_log','outfile_minibatch')
+#         output_files:
+#             out_dir_train: 'run_scvis_train_sparse/'
+#             sample_dir: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_train_sparse/'
+
+
+# #================================================
+# # run scvis map sparse
+# #================================================
+# __TASK_scvis__map_sparse: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_scvis_map'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         #num_cpus: 1
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component:
+#         parameters: 
+#             #normalize: False
+#             sample_id: $sample_id
+#             genome: ('__SHARED__','genome')
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         input_files:
+#             # indir: ('__TASK_summarize__cellranger','out_dir')
+#             # infile: ('__TASK_summarize__cellranger','out_file')
+#             data_matrix_file: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+#             pretrained_model_file: False
+#             #indir_label: ('__TASK_analyse_matrix_QC_phenograph','out_dir')
+#             data_label_file: ('__TASK_analyse_matrix_QC_phenograph_log','outfile_minibatch')
+#             ckpt_dir: ('__TASK_scvis__train_sparse','sample_dir')
+#             #data_matrix_file: ('__SAMPLES__','expresion')
+#             #data_label_file: ('__SAMPLES__','labels')
+#         output_files:
+#             out_dir: 'run_scvis_map_sparse/'
+# #================================================
+# # draw markers SPCA space
+# #================================================
+# __TASK_draw_markers_scvis_SPCA: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'draw_markers'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '4G'
+#         forced_dependencies: ['__TASK_scvis__map_PCA']
+#         add_breakpoint: False
+#         boilerplate:
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#     component: 
+#         parameters:
+#             usecols: '1 2'
+#             sample_id: $sample_id
+#             genome: ('__SHARED__','genome')
+#         input_files:
+#             h5_file: ('__SAMPLES__','h5_file')
+#             Marker_genes: ('__SHARED__','Marker_genes')
+#             PCs: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_map_sparse/*map.tsv'
+#         output_files:
+#             out_dir: 'run_scvis_map_SPCA/'
+#             fig_type: 'Scvis'
+# # #================================================
+# # # run scvis train Seurat
+# # #================================================
+# __TASK_scvis__train_Seurat: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_scvis_train'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component: 
+#         parameters:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#             #normalize: False
+#             verbose_interval: 50
+#             sample_id: ${sample_id}
+#             genome: ('__SHARED__','genome')
+#         input_files:
+#             # indir: $sample_id
+#             data_matrix_file: ('__TASK_analyse_matrix_Seurat','PCs')
+#             pretrained_model_file: False
+#             #indir_label: ('__TASK_analyse_matrix_QC_phenograph','out_dir')
+#             data_label_file: ('__TASK_analyse_matrix_Seurat','Seurat_labels')
+#         output_files:
+#             out_dir_train: 'run_scvis_train_Seurat/'
+#             sample_dir: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_train_Seurat/'
+
+
+# #================================================
+# # run scvis map Seurat
+# #================================================
+# __TASK_scvis__map_Seurat: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_scvis_map'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         #num_cpus: 1
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component:
+#         parameters: 
+#             #normalize: False
+#             sample_id: $sample_id
+#             genome: ('__SHARED__','genome')
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         input_files:
+#             # indir: ('__TASK_summarize__cellranger','out_dir')
+#             # infile: ('__TASK_summarize__cellranger','out_file')
+#             data_matrix_file: ('__TASK_analyse_matrix_Seurat','PCs')
+#             pretrained_model_file: False
+#             #indir_label: ('__TASK_analyse_matrix_QC_phenograph','out_dir')
+#             data_label_file: ('__TASK_analyse_matrix_Seurat','Seurat_labels')
+#             ckpt_dir: ('__TASK_scvis__train_Seurat','sample_dir')
+#             #data_matrix_file: ('__SAMPLES__','expresion')
+#             #data_label_file: ('__SAMPLES__','labels')
+#         output_files:
+#             out_dir: 'run_scvis_map_Seurat/'
+# #================================================
+# # draw markers Seurat space
+# #================================================
+# __TASK_draw_markers_scvis_Seurat: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'draw_markers'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '4G'
+#         forced_dependencies: ['__TASK_scvis__map_PCA']
+#         add_breakpoint: False
+#         boilerplate:
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#     component: 
+#         parameters:
+#             usecols: '1 2'
+#             sample_id: $sample_id
+#             genome: ('__SHARED__','genome')
+#         input_files:
+#             h5_file: ('__SAMPLES__','h5_file')
+#             Marker_genes: ('__SHARED__','Marker_genes')
+#             PCs: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_map_Seurat/*map.tsv'
+#         output_files:
+#             out_dir: 'run_scvis_map_Seurat/'
+#             fig_type: 'Scvis'
+# # # #================================================
+# # # # run scvis train GSC cluster
+# # # #================================================
+# __TASK_scvis__train_GSC: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_scvis_train'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component: 
+#         parameters:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#             #normalize: False
+#             verbose_interval: 50
+#             sample_id: ${sample_id}
+#             genome: ('__SHARED__','genome')
+#         input_files:
+#             # indir: $sample_id
+#             data_matrix_file: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+#             pretrained_model_file: False
+#             data_label_file: ('__SAMPLES__','GSC_cluster')
+#         output_files:
+#             out_dir_train: 'run_scvis_train_GSC/'
+#             sample_dir: '${pipeline_working_dir}/${pipeline_name}/outputs/run_scvis_train_GSC/'
+
+# #================================================
+# # run scvis map GSC cluster
+# #================================================
+# __TASK_scvis__map_GSC: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'run_scvis_map'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         #num_cpus: 1
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/lib/R/library:/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component:
+#         parameters: 
+#             #normalize: False
+#             sample_id: $sample_id
+#             genome: ('__SHARED__','genome')
+#         requirements:
+#             python: /genesis/extscratch/shahlab/ssaberi/centos6/bin/miniconda3/envs/snakes/bin/python
+#         input_files:
+#             # indir: ('__TASK_summarize__cellranger','out_dir')
+#             # infile: ('__TASK_summarize__cellranger','out_file')
+#             data_matrix_file: ('__TASK_analyse_matrix_QC_phenograph_log','PCs')
+#             pretrained_model_file: False
+#             #indir_label: ('__TASK_analyse_matrix_QC_phenograph','out_dir')
+#             data_label_file: ('__SAMPLES__','GSC_cluster')
+#             ckpt_dir: ('__TASK_scvis__train_GSC','sample_dir')
+#         output_files:
+#             out_dir: 'run_scvis_map_GSC/'
+
+
+
+# # #================================================
+# # run clustering analysis monocle
+# # #================================================
+# __TASK_analyse_matrix_monocle: 
+#     reserved: 
+#         # do not change this section.
+#         component_name: 'analyse_matrix_monocle'
+#         component_version: '0.0.1'
+#         seed_version: '0.0.1'
+#     run:
+#         use_cluster: True
+#         memory: '10G'
+#         forced_dependencies: []
+#         add_breakpoint: False
+#         boilerplate:
+#         requirements:
+#             Rscript: /genesis/extscratch/shahlab/ssaberi/centos6/bin/anaconda2/bin/Rscript
+#         env_vars:
+#             PYTHONPATH: ('__SHARED__','python_path')
+#             LD_LIBRARY_PATH: ('__SHARED__','ld_library_path') 
+#             R_LIBS: /extscratch/shahlab/ssaberi/centos6/bin/anaconda2/lib/R/library:/clusterapp/clusterhome/ssaberi/R/x86_64-pc-linux-gnu-library/3.3
+#     component: 
+#         parameters:
+#             sample_id: ${sample_id}
+#             dimension_limit: 50
+#             nearest_neighbors: 30
+#         input_files:
+#             # in_dir: ('__TASK_summarize__cellranger','out_dir')
+#             # data_matrix_file: ('__TASK_summarize__cellranger','out_file')
+#             #data_matrix_file: ('__SAMPLES__','h5_file')
+#             #genome: ('__SHARED__','genome')
+#             csv: ('__TASK_run_cellranger_mat2csv','csv')
+#             #signature_genes: 'null'
+#             top_genes: 2000
+#         output_files:
+#             out_dir: 'analyse_matrix_monocle/'
+#             pref: 'analysis_monocle'
+
